@@ -1,0 +1,78 @@
+Create a mobile application using Expo and React Native for a Student Enrollment Portfolio System with the following features and flow:
+
+🔐 1. Authentication Module
+Allow users (students) to:
+Create an account (Sign Up)
+Log in securely (Login)
+Use email and password authentication
+Store user session (JWT or Firebase Auth)
+📂 2. Document Requirements Module
+Display required documents:
+Birth Certificate
+Good Moral Certificate
+PSA
+Transcript of Records (TOR)
+📤 3. Upload Credentials Module
+Allow users to upload:
+Birth Certificate
+Good Moral Certificate
+PSA
+TOR
+Features:
+File picker (image/PDF)
+Upload progress indicator
+Save files to cloud storage (Firebase Storage / Cloudinary / AWS S3)
+Store file URLs in database
+✏️ 4. Review & Edit Portfolio
+Allow users to:
+View uploaded documents
+Edit or replace files
+See upload status (Complete / Missing)
+👀 5. Preview Submission
+Show a summary of all uploaded credentials
+Allow final review before submission
+📩 6. Submit Portfolio
+Submit all documents to admin
+Save submission status as:
+Pending Review
+🏫 7. Admin Review System (Backend Feature)
+Admin can:
+View student submissions
+Verify documents
+Mark status:
+Approved
+Revisions Needed
+🔁 8. Revision Flow
+If “Revisions Needed”:
+Notify student
+Highlight missing/incorrect documents
+Allow re-upload
+✅ 9. Approval & Enrollment Confirmation
+If “Approved”:
+Mark as “Enrollment Confirmed”
+Display success screen:
+“Student is Admitted”
+🔔 10. Notification System (Optional but Recommended)
+Notify users via:
+In-app notifications
+Email (via backend)
+SMS (Twilio integration)
+🧩 Suggested Tech Stack
+Frontend: Expo + React Native
+Backend: Node.js + Express
+Database: PostgreSQL / Firebase Firestore
+Storage: Firebase Storage / Redis
+Authentication: Firebase Auth or JWT
+🎨 UI Screens to Build
+Login / Register Screen
+Dashboard
+Upload Documents Screen
+Review & Edit Screen
+Preview Submission Screen
+Status Tracking Screen
+Notification Screen
+💡 Extra Features (Optional but Powerful)
+Progress tracker (e.g., 60% complete)
+Real-time status updates
+Admin dashboard (web-based)
+File validation (size/type

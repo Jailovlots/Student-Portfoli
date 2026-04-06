@@ -1,0 +1,8 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "VvmlRdesYUmS2gAdqpFMP"
+uri = "file://artifacts/student-enrollment/assets/images/icon.png"
+type = "image"
+title = "generated_image"
