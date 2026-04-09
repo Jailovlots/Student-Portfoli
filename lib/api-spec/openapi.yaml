@@ -1,22 +1,178 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: API specification for Student Portfolio Enrollment System
 servers:
   - url: /api
     description: Base API path
 tags:
+  - name: auth
+    description: Authentication operations
+  - name: portfolio
+    description: Portfolio management for students
+  - name: admin
+    description: Administrative portfolio management
   - name: health
     description: Health operations
+
 paths:
+  /auth/register:
+    post:
+      operationId: register
+      tags: [auth]
+      summary: Register a new student
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "201":
+          description: Registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Bad request
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login to the system
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Logged in successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Unauthorized
+
+  /portfolio:
+    get:
+      operationId: getPortfolio
+      tags: [portfolio]
+      summary: Get current student's portfolio
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Portfolio"
+
+  /portfolio/submit:
+    post:
+      operationId: submitPortfolio
+      tags: [portfolio]
+      summary: Submit portfolio for review
+      responses:
+        "200":
+          description: Submitted successfully
+
+  /portfolio/documents:
+    post:
+      operationId: uploadDocument
+      tags: [portfolio]
+      summary: Upload a document
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UploadDocumentRequest"
+      responses:
+        "200":
+          description: Document uploaded successfully
+
+  /admin/portfolios:
+    get:
+      operationId: getAllPortfolios
+      tags: [admin]
+      summary: Get all portfolios for admin review
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Portfolio"
+
+  /admin/portfolios/{userId}/status:
+    post:
+      operationId: updatePortfolioStatus
+      tags: [admin]
+      summary: Update portfolio submission status
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                note:
+                  type: string
+      responses:
+        "200":
+          description: Success
+
+  /admin/portfolios/{userId}/documents/{type}/status:
+    post:
+      operationId: updateDocumentStatus
+      tags: [admin]
+      summary: Update individual document status
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: type
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                note:
+                  type: string
+      responses:
+        "200":
+          description: Success
+
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,13 +180,101 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
 components:
   schemas:
+    RegisterRequest:
+      type: object
+      required: [name, email, password, studentId]
+      properties:
+        name: { type: string }
+        email: { type: string }
+        password: { type: string }
+        studentId: { type: string }
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string }
+        password: { type: string }
+
+    AuthResponse:
+      type: object
+      required: [user, token]
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        token:
+          type: string
+
+    User:
+      type: object
+      required: [id, name, email, role]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        email: { type: string }
+        role: { type: string }
+        studentId: { type: string }
+
+    Portfolio:
+      type: object
+      required: [userId, submissionStatus, documents]
+      properties:
+        userId: { type: integer }
+        userName: { type: string }
+        userEmail: { type: string }
+        submissionStatus: { type: string }
+        submittedAt: { type: string, format: date-time }
+        reviewedAt: { type: string, format: date-time }
+        adminNote: { type: string }
+        documents:
+          type: array
+          items:
+            $ref: "#/components/schemas/DocumentItem"
+        notifications:
+          type: array
+          items:
+            $ref: "#/components/schemas/Notification"
+
+    DocumentItem:
+      type: object
+      required: [type, status]
+      properties:
+        type: { type: string }
+        status: { type: string }
+        uri: { type: string }
+        fileName: { type: string }
+        fileSize: { type: integer }
+        mimeType: { type: string }
+        uploadedAt: { type: string, format: date-time }
+        adminNote: { type: string }
+
+    UploadDocumentRequest:
+      type: object
+      required: [type, uri, fileName, fileSize, mimeType]
+      properties:
+        type: { type: string }
+        uri: { type: string }
+        fileName: { type: string }
+        fileSize: { type: integer }
+        mimeType: { type: string }
+
+    Notification:
+      type: object
+      required: [id, title, message, read, createdAt]
+      properties:
+        id: { type: integer }
+        title: { type: string }
+        message: { type: string }
+        read: { type: boolean }
+        createdAt: { type: string, format: date-time }
+        type: { type: string }
+
     HealthStatus:
       type: object
+      required: [status]
       properties:
-        status:
-          type: string
-      required:
-        - status
+        status: { type: string }
 

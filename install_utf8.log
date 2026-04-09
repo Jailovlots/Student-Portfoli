@@ -1,0 +1,5 @@
+﻿Scope: all 9 workspace projects
+artifacts/api-server                     | ΓÇëWARNΓÇë deprecated @types/bcryptjs@3.0.0
+Progress: resolved 1, reused 0, downloaded 0, added 0
+ΓÇëERR_PNPM_CATALOG_ENTRY_NOT_FOUND_FOR_SPECΓÇë No catalog entry '@types/react' was found for catalog 'default'.
+Progress: resolved 10, reused 0, downloaded 0, added 0
