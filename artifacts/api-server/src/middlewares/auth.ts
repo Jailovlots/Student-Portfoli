@@ -26,7 +26,7 @@ export const authenticate = (req: AuthRequest, res: Response, next: NextFunction
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as { id: number; role: string };
     req.user = decoded;
-    next();
+    return next();
   } catch (error) {
     return res.status(401).json({ message: "Invalid token" });
   }
@@ -36,5 +36,5 @@ export const isAdmin = (req: AuthRequest, res: Response, next: NextFunction) => 
   if (req.user?.role !== "admin") {
     return res.status(403).json({ message: "Forbidden" });
   }
-  next();
+  return next();
 };

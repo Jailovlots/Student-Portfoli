@@ -1,4 +1,6 @@
+import { router } from "expo-router";
 import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { Platform } from "react-native";
 import { useAuth } from "./AuthContext";
 import { customFetch } from "@workspace/api-client-react";
 
@@ -51,32 +53,67 @@ interface PortfolioContextValue {
   adminUpdateDocument: (userId: string, type: DocumentType, status: DocumentStatus, note?: string) => Promise<void>;
   adminUpdateSubmission: (userId: string, status: SubmissionStatus, note?: string) => Promise<void>;
   refreshAllPortfolios: () => Promise<void>;
+  fetchPortfolioDetail: (userId: string) => Promise<Portfolio | null>;
 }
 
 const PortfolioContext = createContext<PortfolioContextValue | null>(null);
+
+const DEFAULT_DOCUMENTS: DocumentItem[] = [
+  { type: "birth_certificate", label: "Birth Certificate", description: "Clear copy of your PSA Birth Certificate", status: "missing" },
+  { type: "good_moral", label: "Good Moral Certificate", description: "Certificate of Good Moral Character", status: "missing" },
+  { type: "psa", label: "PSA / Marriage Contract", description: "PSA copy of Marriage Contract (if applicable)", status: "missing" },
+  { type: "tor", label: "Transcript of Records", description: "Official Transcript of Records or Form 137", status: "missing" },
+];
 
 export function PortfolioProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const [portfolio, setPortfolio] = useState<Portfolio | null>(null);
   const [allPortfolios, setAllPortfolios] = useState<Portfolio[]>([]);
 
+  const mergeDocuments = useCallback((data: Portfolio): Portfolio => {
+    const documents = DEFAULT_DOCUMENTS.map(def => {
+      const existing = data.documents?.find(d => d.type === def.type);
+      if (existing) {
+        return {
+          ...def,
+          ...existing,
+          // Ensure label and description are preserved/fallback
+          label: def.label,
+          description: def.description
+        };
+      }
+      return def;
+    });
+    return { ...data, documents };
+  }, []);
+
   const fetchPortfolio = useCallback(async () => {
     try {
       const data = await customFetch<Portfolio>("/api/portfolio");
-      setPortfolio(data);
+      setPortfolio(mergeDocuments(data));
     } catch (e) {
       console.error("Failed to fetch portfolio", e);
     }
-  }, []);
+  }, [mergeDocuments]);
+
+  const fetchPortfolioDetail = useCallback(async (userId: string) => {
+    try {
+      const data = await customFetch<Portfolio>(`/api/admin/portfolios/${userId}`);
+      return mergeDocuments(data);
+    } catch (e) {
+      console.error("Failed to fetch portfolio detail", e);
+      return null;
+    }
+  }, [mergeDocuments]);
 
   const refreshAllPortfolios = useCallback(async () => {
     try {
       const data = await customFetch<Portfolio[]>("/api/admin/portfolios");
-      setAllPortfolios(data);
+      setAllPortfolios(data.map(p => mergeDocuments(p)));
     } catch (e) {
       console.error("Failed to fetch all portfolios", e);
     }
-  }, []);
+  }, [mergeDocuments]);
 
   useEffect(() => {
     if (user && user.role === "student") {
@@ -90,16 +127,38 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
   }, [user, fetchPortfolio, refreshAllPortfolios]);
 
   const uploadDocument = useCallback(async (type: DocumentType, uri: string, fileName: string, fileSize: number, mimeType: string) => {
+    const formData = new FormData();
+    
+    if (Platform.OS === "web") {
+      // In web, we need to fetch the blob from the uri to send raw file data
+      const response = await fetch(uri);
+      const blob = await response.blob();
+      formData.append("file", blob, fileName);
+    } else {
+      // In React Native, the native bridge handles the uri automatically
+      const fileToUpload = {
+        uri: uri,
+        name: fileName,
+        type: mimeType,
+      } as any;
+      formData.append("file", fileToUpload);
+    }
+
+    formData.append("type", type);
+
     await customFetch("/api/portfolio/documents", {
       method: "POST",
-      body: JSON.stringify({ type, uri, fileName, fileSize, mimeType }),
+      body: formData as any,
     });
     await fetchPortfolio();
   }, [fetchPortfolio]);
 
   const removeDocument = useCallback(async (type: DocumentType) => {
-    console.warn("Remove document not yet implemented in API");
-  }, []);
+    await customFetch(`/api/portfolio/documents/${type}`, {
+      method: "DELETE",
+    });
+    await fetchPortfolio();
+  }, [fetchPortfolio]);
 
   const submitPortfolio = useCallback(async () => {
     await customFetch("/api/portfolio/submit", {
@@ -109,12 +168,19 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
   }, [fetchPortfolio]);
 
   const markNotificationRead = useCallback(async (id: string) => {
-    console.warn("Mark notification read not yet implemented in API");
-  }, []);
+    await customFetch(`/api/portfolio/notifications/${id}/read`, {
+      method: "PATCH",
+    });
+    await fetchPortfolio();
+  }, [fetchPortfolio]);
 
   const adminUpdateDocument = useCallback(async (userId: string, type: DocumentType, status: DocumentStatus, note?: string) => {
-    console.warn("Admin update document not yet specifically implemented in API");
-  }, []);
+    await customFetch(`/api/admin/portfolios/${userId}/documents/${type}/status`, {
+      method: "POST",
+      body: JSON.stringify({ status, note }),
+    });
+    await refreshAllPortfolios();
+  }, [refreshAllPortfolios]);
 
   const adminUpdateSubmission = useCallback(async (userId: string, status: SubmissionStatus, note?: string) => {
     await customFetch(`/api/admin/portfolios/${userId}/status`, {
@@ -135,6 +201,7 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
       adminUpdateDocument,
       adminUpdateSubmission,
       refreshAllPortfolios,
+      fetchPortfolioDetail,
     }}>
       {children}
     </PortfolioContext.Provider>

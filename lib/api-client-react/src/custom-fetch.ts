@@ -1,6 +1,4 @@
-export type CustomFetchOptions = RequestInit & {
-  responseType?: "json" | "text" | "blob" | "auto";
-};
+
 
 export type ErrorType<T = unknown> = ApiError<T>;
 
@@ -322,12 +320,20 @@ async function parseSuccessBody(
   }
 }
 
+export type CustomFetchOptions = RequestInit & {
+  responseType?: "json" | "text" | "blob" | "auto";
+  /**
+   * Request timeout in milliseconds. Defaults to 60,000 (60 seconds).
+   */
+  timeout?: number;
+};
+
 export async function customFetch<T = unknown>(
   input: RequestInfo | URL,
   options: CustomFetchOptions = {},
 ): Promise<T> {
   input = applyBaseUrl(input);
-  const { responseType = "auto", headers: headersInit, ...init } = options;
+  const { responseType = "auto", headers: headersInit, timeout = 60000, ...init } = options;
 
   const method = resolveMethod(input, init.method);
 
@@ -343,6 +349,14 @@ export async function customFetch<T = unknown>(
     looksLikeJson(init.body)
   ) {
     headers.set("content-type", "application/json");
+  } else if (
+    globalThis.FormData &&
+    init.body instanceof FormData &&
+    headers.has("content-type")
+  ) {
+    // If we're sending FormData, the browser must set the Content-Type
+    // with its own boundary. Remove any manual setting.
+    headers.delete("content-type");
   }
 
   if (responseType === "json" && !headers.has("accept")) {
@@ -359,13 +373,30 @@ export async function customFetch<T = unknown>(
   }
 
   const requestInfo = { method, url: resolveUrl(input) };
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
 
-  const response = await fetch(input, { ...init, method, headers });
+  try {
+    const response = await fetch(input, {
+      ...init,
+      method,
+      headers,
+      signal: controller.signal,
+    });
 
-  if (!response.ok) {
-    const errorData = await parseErrorBody(response, method);
-    throw new ApiError(response, errorData, requestInfo);
+    clearTimeout(id);
+
+    if (!response.ok) {
+      const errorData = await parseErrorBody(response, method);
+      throw new ApiError(response, errorData, requestInfo);
+    }
+
+    return (await parseSuccessBody(response, responseType, requestInfo)) as T;
+  } catch (error: any) {
+    clearTimeout(id);
+    if (error.name === "AbortError") {
+      throw new Error(`Request timed out after ${timeout}ms`);
+    }
+    throw error;
   }
-
-  return (await parseSuccessBody(response, responseType, requestInfo)) as T;
 }

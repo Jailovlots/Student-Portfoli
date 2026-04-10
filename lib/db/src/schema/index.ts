@@ -48,10 +48,10 @@ export const notificationsTable = pgTable("notifications", {
 });
 
 // Zod Schemas
-export const insertUserSchema = createInsertSchema(usersTable);
-export const insertPortfolioSchema = createInsertSchema(portfoliosTable);
-export const insertDocumentSchema = createInsertSchema(documentsTable);
-export const insertNotificationSchema = createInsertSchema(notificationsTable);
+export const insertUserSchema = createInsertSchema(usersTable) as any;
+export const insertPortfolioSchema = createInsertSchema(portfoliosTable) as any;
+export const insertDocumentSchema = createInsertSchema(documentsTable) as any;
+export const insertNotificationSchema = createInsertSchema(notificationsTable) as any;
 
 // Types
 export type User = typeof usersTable.$inferSelect;

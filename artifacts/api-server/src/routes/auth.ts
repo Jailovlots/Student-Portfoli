@@ -41,9 +41,9 @@ authRouter.post("/register", async (req: Request, res: Response) => {
     const token = jwt.sign({ id: newUser.id, role: newUser.role }, JWT_SECRET);
 
     const { password: _, ...userWithoutPw } = newUser;
-    res.status(201).json({ user: userWithoutPw, token });
+    return res.status(201).json({ user: userWithoutPw, token });
   } catch (error) {
-    res.status(500).json({ message: "Registration failed." });
+    return res.status(500).json({ message: "Registration failed." });
   }
 });
 
@@ -82,9 +82,9 @@ authRouter.post("/login", async (req: Request, res: Response) => {
     const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET);
 
     const { password: _, ...userWithoutPw } = user;
-    res.json({ user: userWithoutPw, token });
+    return res.json({ user: userWithoutPw, token });
   } catch (error) {
-    res.status(500).json({ message: "Login failed." });
+    return res.status(500).json({ message: "Login failed." });
   }
 });
 

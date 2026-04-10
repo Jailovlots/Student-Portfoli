@@ -2,8 +2,8 @@
   "compilerOptions": {
     "isolatedModules": true,
     "lib": ["es2022"],
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
     "noEmitOnError": true,
     "noFallthroughCasesInSwitch": true,
     "noImplicitOverride": false,

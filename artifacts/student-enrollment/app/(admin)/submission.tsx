@@ -23,46 +23,51 @@ import {
   usePortfolio,
 } from "@/context/PortfolioContext";
 import { useColors } from "@/hooks/useColors";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-
-const PORTFOLIO_PREFIX = "portfolio_";
 
 export default function SubmissionDetailScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { userId } = useLocalSearchParams<{ userId: string }>();
-  const { adminUpdateDocument, adminUpdateSubmission, refreshAllPortfolios } = usePortfolio();
+  const { adminUpdateDocument, adminUpdateSubmission, fetchPortfolioDetail } = usePortfolio();
   const [portfolio, setPortfolio] = useState<Portfolio | null>(null);
   const [adminNote, setAdminNote] = useState("");
   const [updating, setUpdating] = useState(false);
 
+  const loadData = async () => {
+    if (!userId) return;
+    const p = await fetchPortfolioDetail(userId);
+    if (p) {
+      setPortfolio(p);
+      setAdminNote(p.adminNote ?? "");
+    }
+  };
+
   useEffect(() => {
-    (async () => {
-      const raw = await AsyncStorage.getItem(PORTFOLIO_PREFIX + userId);
-      if (raw) {
-        const p: Portfolio = JSON.parse(raw);
-        setPortfolio(p);
-        setAdminNote(p.adminNote ?? "");
-      }
-    })();
+    loadData();
   }, [userId]);
 
   if (!portfolio) return null;
 
   const handleDocStatus = async (type: DocumentType, status: DocumentStatus, note?: string) => {
-    await adminUpdateDocument(userId, type, status, note);
-    const raw = await AsyncStorage.getItem(PORTFOLIO_PREFIX + userId);
-    if (raw) setPortfolio(JSON.parse(raw));
+    try {
+      await adminUpdateDocument(userId, type, status, note);
+      await loadData();
+    } catch (e) {
+      Alert.alert("Error", "Failed to update document status.");
+    }
   };
 
   const handleSubmissionStatus = async (status: SubmissionStatus) => {
     setUpdating(true);
-    await adminUpdateSubmission(userId, status, adminNote || undefined);
-    await refreshAllPortfolios();
-    const raw = await AsyncStorage.getItem(PORTFOLIO_PREFIX + userId);
-    if (raw) setPortfolio(JSON.parse(raw));
-    setUpdating(false);
-    Alert.alert("Updated", `Status updated to ${status.replace(/_/g, " ")}.`);
+    try {
+      await adminUpdateSubmission(userId, status, adminNote || undefined);
+      await loadData();
+      Alert.alert("Updated", `Status updated to ${status.replace(/_/g, " ")}.`);
+    } catch (e) {
+      Alert.alert("Error", "Failed to update portfolio status.");
+    } finally {
+      setUpdating(false);
+    }
   };
 
   return (
@@ -140,9 +145,14 @@ export default function SubmissionDetailScreen() {
                 </Pressable>
                 <Pressable
                   onPress={() => {
-                    Alert.prompt("Revision Note", "Enter feedback for the student:", (note) => {
-                      handleDocStatus(doc.type as DocumentType, "revision_needed", note || undefined);
-                    });
+                    if (Platform.OS === "web") {
+                       const note = window.prompt("Enter feedback for the student:");
+                       if (note !== null) handleDocStatus(doc.type as DocumentType, "revision_needed", note || undefined);
+                    } else {
+                      Alert.prompt("Revision Note", "Enter feedback for the student:", (note) => {
+                        handleDocStatus(doc.type as DocumentType, "revision_needed", note || undefined);
+                      });
+                    }
                   }}
                   style={({ pressed }) => [
                     styles.docActionBtn,

@@ -1,10 +1,11 @@
+import { router } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { customFetch, setAuthTokenGetter, setBaseUrl } from "@workspace/api-client-react";
 
-// For Replit/Web, the API is served on the same domain but under /api
-// For mobile, we would need the actual host
-setBaseUrl(""); 
+// In development, the API is served on localhost:5000
+// For production, this should be the production URL
+setBaseUrl("http://localhost:5000");
 
 setAuthTokenGetter(async () => {
   return await AsyncStorage.getItem("auth_token");
@@ -41,8 +42,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     (async () => {
       try {
         const session = await AsyncStorage.getItem(SESSION_KEY);
-        if (session) {
-          setUser(JSON.parse(session));
+        if (session && session !== "undefined" && session !== "null") {
+          try {
+            setUser(JSON.parse(session));
+          } catch (e) {
+            console.error("Failed to parse session", e);
+            await AsyncStorage.removeItem(SESSION_KEY);
+          }
         }
       } finally {
         setIsLoading(false);
@@ -56,9 +62,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       body: JSON.stringify({ email, password }),
     });
 
-    await AsyncStorage.setItem(TOKEN_KEY, res.token);
-    await AsyncStorage.setItem(SESSION_KEY, JSON.stringify(res.user));
+    if (res.token) await AsyncStorage.setItem(TOKEN_KEY, res.token);
+    if (res.user) await AsyncStorage.setItem(SESSION_KEY, JSON.stringify(res.user));
     setUser(res.user);
+    router.replace("/");
   }, []);
 
   const register = useCallback(async (name: string, email: string, password: string, studentId: string) => {
@@ -67,15 +74,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       body: JSON.stringify({ name, email, password, studentId }),
     });
 
-    await AsyncStorage.setItem(TOKEN_KEY, res.token);
-    await AsyncStorage.setItem(SESSION_KEY, JSON.stringify(res.user));
+    if (res.token) await AsyncStorage.setItem(TOKEN_KEY, res.token);
+    if (res.user) await AsyncStorage.setItem(SESSION_KEY, JSON.stringify(res.user));
     setUser(res.user);
+    router.replace("/");
   }, []);
 
   const logout = useCallback(async () => {
     await AsyncStorage.removeItem(SESSION_KEY);
     await AsyncStorage.removeItem(TOKEN_KEY);
     setUser(null);
+    router.replace("/(auth)/login");
   }, []);
 
   return (

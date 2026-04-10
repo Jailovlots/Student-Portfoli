@@ -24,9 +24,9 @@ adminRouter.get("/portfolios", authenticate, isAdmin, async (req: AuthRequest, r
       });
     }
 
-    res.json(result);
+    return res.json(result);
   } catch (error) {
-    res.status(500).json({ message: "Failed to fetch all portfolios." });
+    return res.status(500).json({ message: "Failed to fetch all portfolios." });
   }
 });
 
@@ -65,9 +65,9 @@ adminRouter.post("/portfolios/:userId/status", authenticate, isAdmin, async (req
       type,
     });
 
-    res.json({ message: "Portfolio status updated." });
+    return res.json({ message: "Portfolio status updated." });
   } catch (error) {
-    res.status(500).json({ message: "Failed to update portfolio status." });
+    return res.status(500).json({ message: "Failed to update portfolio status." });
   }
 });
 
@@ -83,9 +83,31 @@ adminRouter.post("/portfolios/:userId/documents/:type/status", authenticate, isA
       })
       .where(and(eq(documentsTable.portfolioId, Number(userId)), eq(documentsTable.type, type as any)));
 
-    res.json({ message: "Document status updated." });
+    return res.json({ message: "Document status updated." });
   } catch (error) {
-    res.status(500).json({ message: "Failed to update document status." });
+    return res.status(500).json({ message: "Failed to update document status." });
+  }
+});
+
+adminRouter.get("/portfolios/:userId", authenticate, isAdmin, async (req: AuthRequest, res: Response) => {
+  try {
+    const { userId } = req.params;
+    const [portfolio] = await db.select().from(portfoliosTable).where(eq(portfoliosTable.userId, Number(userId)));
+    if (!portfolio) return res.status(404).json({ message: "Portfolio not found." });
+
+    const [user] = await db.select().from(usersTable).where(eq(usersTable.id, Number(userId)));
+    const documents = await db.select().from(documentsTable).where(eq(documentsTable.portfolioId, Number(userId)));
+    const notifications = await db.select().from(notificationsTable).where(eq(notificationsTable.userId, Number(userId)));
+
+    return res.json({
+      ...portfolio,
+      userName: user?.name,
+      userEmail: user?.email,
+      documents,
+      notifications,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: "Failed to fetch portfolio detail." });
   }
 });
 

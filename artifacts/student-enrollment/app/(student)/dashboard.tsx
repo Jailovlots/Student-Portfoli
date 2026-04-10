@@ -23,7 +23,7 @@ export default function DashboardScreen() {
   const { user, logout } = useAuth();
   const { portfolio } = usePortfolio();
 
-  const unread = portfolio?.notifications.filter((n) => !n.read).length ?? 0;
+  const unread = (portfolio?.notifications ?? []).filter((n) => !n.read).length;
 
   const actions = [
     { label: "Upload Documents", icon: "upload-cloud" as const, route: "/(student)/upload" as const, color: colors.primary },
@@ -97,7 +97,7 @@ export default function DashboardScreen() {
         {/* Progress */}
         {portfolio && (
           <Card style={styles.progressCard} elevated>
-            <ProgressTracker documents={portfolio.documents} />
+            <ProgressTracker documents={portfolio.documents ?? []} />
           </Card>
         )}
 
@@ -144,7 +144,7 @@ export default function DashboardScreen() {
           <View>
             <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Documents</Text>
             <View style={styles.docSummary}>
-              {portfolio.documents.map((doc) => (
+              {(portfolio.documents ?? []).map((doc) => (
                 <View
                   key={doc.type}
                   style={[

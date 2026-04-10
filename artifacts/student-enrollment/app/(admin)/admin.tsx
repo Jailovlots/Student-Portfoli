@@ -35,10 +35,10 @@ export default function AdminScreen() {
   };
 
   const byStatus = {
-    pending: allPortfolios.filter((p) => p.submissionStatus === "pending_review").length,
-    approved: allPortfolios.filter((p) => p.submissionStatus === "approved").length,
-    enrolled: allPortfolios.filter((p) => p.submissionStatus === "enrolled").length,
-    revision: allPortfolios.filter((p) => p.submissionStatus === "revisions_needed").length,
+    pending: allPortfolios?.filter((p) => p?.submissionStatus === "pending_review")?.length ?? 0,
+    approved: allPortfolios?.filter((p) => p?.submissionStatus === "approved")?.length ?? 0,
+    enrolled: allPortfolios?.filter((p) => p?.submissionStatus === "enrolled")?.length ?? 0,
+    revision: allPortfolios?.filter((p) => p?.submissionStatus === "revisions_needed")?.length ?? 0,
   };
 
   return (
@@ -94,10 +94,10 @@ export default function AdminScreen() {
         </View>
 
         <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-          All Submissions ({allPortfolios.length})
+          All Submissions ({(allPortfolios ?? []).length})
         </Text>
 
-        {allPortfolios.length === 0 ? (
+        {(!allPortfolios || allPortfolios.length === 0) ? (
           <Card>
             <View style={styles.empty}>
               <Feather name="inbox" size={36} color={colors.mutedForeground} />
@@ -121,7 +121,7 @@ export default function AdminScreen() {
 
 function SubmissionCard({ portfolio }: { portfolio: Portfolio }) {
   const colors = useColors();
-  const uploadedCount = portfolio.documents.filter((d) => d.status !== "missing").length;
+  const uploadedCount = (portfolio.documents ?? []).filter((d) => d.status !== "missing").length;
 
   return (
     <Pressable
