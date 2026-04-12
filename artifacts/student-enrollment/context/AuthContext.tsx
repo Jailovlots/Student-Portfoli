@@ -2,10 +2,18 @@ import { router } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { customFetch, setAuthTokenGetter, setBaseUrl } from "@workspace/api-client-react";
+import { useToast } from "./ToastContext";
 
-// In development, the API is served on localhost:5000
-// For production, this should be the production URL
-setBaseUrl("http://localhost:5000");
+import Constants from "expo-constants";
+
+// In development, resolve the local IP address dynamically via Expo Constants
+// so physical devices and emulators can successfully reach the API server.
+let API_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:5000";
+if (!process.env.EXPO_PUBLIC_API_URL && Constants?.expoConfig?.hostUri) {
+  const host = Constants.expoConfig.hostUri.split(':')[0];
+  API_URL = `http://${host}:5000`;
+}
+setBaseUrl(API_URL);
 
 setAuthTokenGetter(async () => {
   return await AsyncStorage.getItem("auth_token");
@@ -37,6 +45,7 @@ const TOKEN_KEY = "auth_token";
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const { showToast } = useToast();
 
   useEffect(() => {
     (async () => {
@@ -57,35 +66,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
-    const res = await customFetch<{ user: User; token: string }>("/api/auth/login", {
-      method: "POST",
-      body: JSON.stringify({ email, password }),
-    });
+    try {
+      const res = await customFetch<{ user: User; token: string }>("/api/auth/login", {
+        method: "POST",
+        body: JSON.stringify({ email, password }),
+      });
 
-    if (res.token) await AsyncStorage.setItem(TOKEN_KEY, res.token);
-    if (res.user) await AsyncStorage.setItem(SESSION_KEY, JSON.stringify(res.user));
-    setUser(res.user);
-    router.replace("/");
-  }, []);
+      if (res.token) await AsyncStorage.setItem(TOKEN_KEY, res.token);
+      if (res.user) await AsyncStorage.setItem(SESSION_KEY, JSON.stringify(res.user));
+      setUser(res.user);
+      showToast("Signed in successfully", "success");
+      router.replace("/");
+    } catch (e: any) {
+      showToast(e.message || "Failed to sign in", "error");
+      throw e;
+    }
+  }, [showToast]);
 
   const register = useCallback(async (name: string, email: string, password: string, studentId: string) => {
-    const res = await customFetch<{ user: User; token: string }>("/api/auth/register", {
-      method: "POST",
-      body: JSON.stringify({ name, email, password, studentId }),
-    });
+    try {
+      const res = await customFetch<{ user: User; token: string }>("/api/auth/register", {
+        method: "POST",
+        body: JSON.stringify({ name, email, password, studentId }),
+      });
 
-    if (res.token) await AsyncStorage.setItem(TOKEN_KEY, res.token);
-    if (res.user) await AsyncStorage.setItem(SESSION_KEY, JSON.stringify(res.user));
-    setUser(res.user);
-    router.replace("/");
-  }, []);
+      if (res.token) await AsyncStorage.setItem(TOKEN_KEY, res.token);
+      if (res.user) await AsyncStorage.setItem(SESSION_KEY, JSON.stringify(res.user));
+      setUser(res.user);
+      showToast("Account created successfully", "success");
+      router.replace("/");
+    } catch (e: any) {
+      showToast(e.message || "Failed to create account", "error");
+      throw e;
+    }
+  }, [showToast]);
 
   const logout = useCallback(async () => {
     await AsyncStorage.removeItem(SESSION_KEY);
     await AsyncStorage.removeItem(TOKEN_KEY);
     setUser(null);
+    showToast("Signed out successfully", "info");
     router.replace("/(auth)/login");
-  }, []);
+  }, [showToast]);
 
   return (
     <AuthContext.Provider value={{ user, isLoading, login, register, logout }}>

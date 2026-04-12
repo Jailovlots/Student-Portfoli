@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: student-portfolio-api
+    env: node
+    plan: free # or your preferred plan
+    buildCommand: pnpm install && pnpm --filter @workspace/api-server... run build
+    startCommand: pnpm --filter @workspace/api-server run start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: DATABASE_URL
+        sync: false # Ensure this is provided in the Render dashboard or via a linked DB
+      - key: JWT_SECRET
+        generateValue: true # Generates a random secret if not provided
+      - key: EXPO_PUBLIC_API_URL
+        sync: false # Useful if you want the API to know its own URL
+
+databases:
+  - name: student-portfolio-db
+    databaseName: student_portfolio
+    user: admin
+    plan: free # Note: Render Free databases expire after 90 days

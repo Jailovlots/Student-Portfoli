@@ -97,9 +97,7 @@ export default function LoginScreen() {
             <Button title="Sign In" onPress={handleLogin} loading={loading} fullWidth />
           </View>
 
-          <View style={styles.hint}>
-            <Text style={[styles.hintText, { color: colors.mutedForeground }]}>Admin? Use admin@school.edu / admin123</Text>
-          </View>
+          {/* Admin hint removed for security */}
 
           <View style={styles.footer}>
             <Text style={[styles.footerText, { color: colors.mutedForeground }]}>Don't have an account?</Text>

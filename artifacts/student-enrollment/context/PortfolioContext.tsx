@@ -3,6 +3,7 @@ import React, { createContext, useCallback, useContext, useEffect, useState } fr
 import { Platform } from "react-native";
 import { useAuth } from "./AuthContext";
 import { customFetch } from "@workspace/api-client-react";
+import { useToast } from "./ToastContext";
 
 export type DocumentType = "birth_certificate" | "good_moral" | "psa" | "tor";
 export type DocumentStatus = "missing" | "uploaded" | "approved" | "revision_needed";
@@ -69,6 +70,7 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const [portfolio, setPortfolio] = useState<Portfolio | null>(null);
   const [allPortfolios, setAllPortfolios] = useState<Portfolio[]>([]);
+  const { showToast } = useToast();
 
   const mergeDocuments = useCallback((data: Portfolio): Portfolio => {
     const documents = DEFAULT_DOCUMENTS.map(def => {
@@ -146,26 +148,44 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
 
     formData.append("type", type);
 
-    await customFetch("/api/portfolio/documents", {
-      method: "POST",
-      body: formData as any,
-    });
-    await fetchPortfolio();
-  }, [fetchPortfolio]);
+    try {
+      await customFetch("/api/portfolio/documents", {
+        method: "POST",
+        body: formData as any,
+      });
+      await fetchPortfolio();
+      showToast("Document uploaded successfully", "success");
+    } catch (e: any) {
+      showToast(e.message || "Failed to upload document", "error");
+      throw e;
+    }
+  }, [fetchPortfolio, showToast]);
 
   const removeDocument = useCallback(async (type: DocumentType) => {
-    await customFetch(`/api/portfolio/documents/${type}`, {
-      method: "DELETE",
-    });
-    await fetchPortfolio();
-  }, [fetchPortfolio]);
+    try {
+      await customFetch(`/api/portfolio/documents/${type}`, {
+        method: "DELETE",
+      });
+      await fetchPortfolio();
+      showToast("Document removed", "info");
+    } catch (e: any) {
+      showToast(e.message || "Failed to remove document", "error");
+      throw e;
+    }
+  }, [fetchPortfolio, showToast]);
 
   const submitPortfolio = useCallback(async () => {
-    await customFetch("/api/portfolio/submit", {
-      method: "POST",
-    });
-    await fetchPortfolio();
-  }, [fetchPortfolio]);
+    try {
+      await customFetch("/api/portfolio/submit", {
+        method: "POST",
+      });
+      await fetchPortfolio();
+      showToast("Portfolio submitted for review", "success");
+    } catch (e: any) {
+      showToast(e.message || "Failed to submit portfolio", "error");
+      throw e;
+    }
+  }, [fetchPortfolio, showToast]);
 
   const markNotificationRead = useCallback(async (id: string) => {
     await customFetch(`/api/portfolio/notifications/${id}/read`, {
@@ -175,20 +195,32 @@ export function PortfolioProvider({ children }: { children: React.ReactNode }) {
   }, [fetchPortfolio]);
 
   const adminUpdateDocument = useCallback(async (userId: string, type: DocumentType, status: DocumentStatus, note?: string) => {
-    await customFetch(`/api/admin/portfolios/${userId}/documents/${type}/status`, {
-      method: "POST",
-      body: JSON.stringify({ status, note }),
-    });
-    await refreshAllPortfolios();
-  }, [refreshAllPortfolios]);
+    try {
+      await customFetch(`/api/admin/portfolios/${userId}/documents/${type}/status`, {
+        method: "POST",
+        body: JSON.stringify({ status, note }),
+      });
+      await refreshAllPortfolios();
+      showToast("Document status updated", "success");
+    } catch (e: any) {
+      showToast(e.message || "Failed to update status", "error");
+      throw e;
+    }
+  }, [refreshAllPortfolios, showToast]);
 
   const adminUpdateSubmission = useCallback(async (userId: string, status: SubmissionStatus, note?: string) => {
-    await customFetch(`/api/admin/portfolios/${userId}/status`, {
-      method: "POST",
-      body: JSON.stringify({ status, note }),
-    });
-    await refreshAllPortfolios();
-  }, [refreshAllPortfolios]);
+    try {
+      await customFetch(`/api/admin/portfolios/${userId}/status`, {
+        method: "POST",
+        body: JSON.stringify({ status, note }),
+      });
+      await refreshAllPortfolios();
+      showToast("Submission status updated", "success");
+    } catch (e: any) {
+      showToast(e.message || "Failed to update status", "error");
+      throw e;
+    }
+  }, [refreshAllPortfolios, showToast]);
 
   return (
     <PortfolioContext.Provider value={{

@@ -16,6 +16,8 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AuthProvider } from "@/context/AuthContext";
 import { PortfolioProvider } from "@/context/PortfolioContext";
+import { ToastProvider } from "@/context/ToastContext";
+import { ToastContainer } from "@/components/ui/Toast";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -41,12 +43,19 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
+    // Hide splash screen when fonts are ready OR if there is an error.
     if (fontsLoaded || fontError) {
       SplashScreen.hideAsync();
     }
-  }, [fontsLoaded, fontError]);
 
-  if (!fontsLoaded && !fontError) return null;
+    // Backup safety: Hide splash screen after 5 seconds regardless of font status
+    // to prevent the app from being stuck on the splash screen forever.
+    const timeout = setTimeout(() => {
+      SplashScreen.hideAsync();
+    }, 5000);
+
+    return () => clearTimeout(timeout);
+  }, [fontsLoaded, fontError]);
 
   return (
     <SafeAreaProvider>
@@ -54,11 +63,14 @@ export default function RootLayout() {
         <QueryClientProvider client={queryClient}>
           <GestureHandlerRootView style={{ flex: 1 }}>
             <KeyboardProvider>
-              <AuthProvider>
-                <PortfolioProvider>
-                  <RootLayoutNav />
-                </PortfolioProvider>
-              </AuthProvider>
+              <ToastProvider>
+                <AuthProvider>
+                  <PortfolioProvider>
+                    <RootLayoutNav />
+                    <ToastContainer />
+                  </PortfolioProvider>
+                </AuthProvider>
+              </ToastProvider>
             </KeyboardProvider>
           </GestureHandlerRootView>
         </QueryClientProvider>
