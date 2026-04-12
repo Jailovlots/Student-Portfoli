@@ -30,6 +30,9 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/uploads", express.static("uploads"));
+app.get("/", (_req, res) => {
+  res.send("<h1>Student Portfolio API</h1><p>The server is running smoothly.</p>");
+});
 app.use("/api", router);
 
 export default app;
