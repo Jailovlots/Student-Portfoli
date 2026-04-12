@@ -16,7 +16,8 @@
     "start": "pnpm --filter @workspace/student-enrollment run dev",
     "android": "pnpm --filter @workspace/student-enrollment exec expo start --android",
     "ios": "pnpm --filter @workspace/student-enrollment exec expo start --ios",
-    "web": "pnpm --filter @workspace/student-enrollment exec expo start --web"
+    "web": "pnpm --filter @workspace/student-enrollment exec expo start --web",
+    "build:android": "pnpm --filter @workspace/student-enrollment exec eas build -p android --profile preview"
   },
   "private": true,
   "devDependencies": {
