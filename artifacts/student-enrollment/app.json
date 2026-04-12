@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Student Enrollment Portfolio",
-    "slug": "student-enrollment",
+    "slug": "workspace",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -16,7 +16,18 @@
     "ios": {
       "supportsTablet": false
     },
-    "android": {},
+    "android": {
+      "package": "com.student.portfolio.enrollment",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/icon.png",
+        "backgroundColor": "#1a1a2e"
+      }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "8e4586c8-8114-48db-8166-d62467916339"
+      }
+    },
     "web": {
       "favicon": "./assets/images/icon.png"
     },
