@@ -4,6 +4,9 @@
       "eas": {
         "projectId": "8e4586c8-8114-48db-8166-d62467916339"
       }
+    },
+    "android": {
+      "package": "com.tarttol.workspace"
     }
   }
 }
