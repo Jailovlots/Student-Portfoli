@@ -94,7 +94,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         // Fallback to inspect what we got
         import('react-native').then(({ Alert }) => {
-          Alert.alert("API Issue", "Raw Response: " + JSON.stringify(res));
+          Alert.alert("API Issue", `Raw Response: ${JSON.stringify(res)}\n\n(Type: ${typeof res})`);
         });
         showToast("Missing user info - see alert", "error");
       }

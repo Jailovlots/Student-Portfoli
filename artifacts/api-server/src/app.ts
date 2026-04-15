@@ -6,6 +6,10 @@ import { logger } from "./lib/logger";
 
 const app: Express = express();
 
+app.use((req, _res, next) => {
+  logger.info({ path: req.path, method: req.method }, "Incoming request");
+  next();
+});
 app.use(
   pinoHttp({
     logger,
