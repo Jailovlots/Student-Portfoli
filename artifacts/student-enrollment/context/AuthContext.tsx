@@ -76,7 +76,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (res.user) await AsyncStorage.setItem(SESSION_KEY, JSON.stringify(res.user));
       setUser(res.user);
       showToast("Signed in successfully", "success");
-      router.replace("/");
+      if (res.user.role === "admin") {
+        router.replace("/(admin)/admin");
+      } else {
+        router.replace("/(student)/dashboard");
+      }
     } catch (e: any) {
       showToast(e.message || "Failed to sign in", "error");
       throw e;
@@ -94,7 +98,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (res.user) await AsyncStorage.setItem(SESSION_KEY, JSON.stringify(res.user));
       setUser(res.user);
       showToast("Account created successfully", "success");
-      router.replace("/");
+      if (res.user.role === "admin") {
+        router.replace("/(admin)/admin");
+      } else {
+        router.replace("/(student)/dashboard");
+      }
     } catch (e: any) {
       showToast(e.message || "Failed to create account", "error");
       throw e;
