@@ -1,7 +1,7 @@
 services:
   - type: web
     name: student-portfolio-api
-    env: node
+    runtime: node
     plan: free # or your preferred plan
     buildCommand: pnpm install && pnpm --filter @workspace/api-server... run build
     startCommand: pnpm --filter @workspace/api-server run start
@@ -15,7 +15,7 @@ services:
       - key: JWT_SECRET
         generateValue: true # Generates a random secret if not provided
       - key: EXPO_PUBLIC_API_URL
-        sync: false # Useful if you want the API to know its own URL
+        value: https://student-portfoli.onrender.com
 
 databases:
   - name: student-portfolio-db
