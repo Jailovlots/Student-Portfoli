@@ -67,19 +67,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = useCallback(async (email: string, password: string) => {
     try {
-      const res = await customFetch<{ user: User; token: string }>("/api/auth/login", {
+      const res = await customFetch<{ user?: User; token?: string }>("/api/auth/login", {
         method: "POST",
         body: JSON.stringify({ email, password }),
       });
 
       if (res.token) await AsyncStorage.setItem(TOKEN_KEY, res.token);
       if (res.user) await AsyncStorage.setItem(SESSION_KEY, JSON.stringify(res.user));
-      setUser(res.user);
-      showToast("Signed in successfully", "success");
-      if (res.user.role === "admin") {
-        router.replace("/(admin)/admin");
+      setUser(res.user || null);
+      
+      if (res.user && res.user.role) {
+        showToast("Signed in successfully", "success");
+        if (res.user.role === "admin") {
+          router.replace("/(admin)/admin");
+        } else {
+          router.replace("/(student)/dashboard");
+        }
       } else {
-        router.replace("/(student)/dashboard");
+        // Fallback to inspect what we got
+        import('react-native').then(({ Alert }) => {
+          Alert.alert("API Issue", "Raw Response: " + JSON.stringify(res));
+        });
+        showToast("Missing user info - see alert", "error");
       }
     } catch (e: any) {
       showToast(e.message || "Failed to sign in", "error");
@@ -89,19 +98,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const register = useCallback(async (name: string, email: string, password: string, studentId: string) => {
     try {
-      const res = await customFetch<{ user: User; token: string }>("/api/auth/register", {
+      const res = await customFetch<{ user?: User; token?: string }>("/api/auth/register", {
         method: "POST",
         body: JSON.stringify({ name, email, password, studentId }),
       });
 
       if (res.token) await AsyncStorage.setItem(TOKEN_KEY, res.token);
       if (res.user) await AsyncStorage.setItem(SESSION_KEY, JSON.stringify(res.user));
-      setUser(res.user);
-      showToast("Account created successfully", "success");
-      if (res.user.role === "admin") {
-        router.replace("/(admin)/admin");
+      setUser(res.user || null);
+      
+      if (res.user && res.user.role) {
+        showToast("Account created successfully", "success");
+        if (res.user.role === "admin") {
+          router.replace("/(admin)/admin");
+        } else {
+          router.replace("/(student)/dashboard");
+        }
       } else {
-        router.replace("/(student)/dashboard");
+         import('react-native').then(({ Alert }) => {
+          Alert.alert("API Issue", "Raw Response: " + JSON.stringify(res));
+         });
+         showToast("Missing user info - see alert", "error");
       }
     } catch (e: any) {
       showToast(e.message || "Failed to create account", "error");

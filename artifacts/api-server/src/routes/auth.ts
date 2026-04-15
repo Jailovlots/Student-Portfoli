@@ -52,14 +52,14 @@ authRouter.post("/login", async (req: Request, res: Response) => {
     const { email, password } = req.body;
 
     // Admin login mock?
-    if (email === "admin@school.edu" && password === "admin123") {
+    if (email === "admin@zdspgc.edu" && password === "admin123") {
       let [admin] = await db.select().from(usersTable).where(eq(usersTable.email, email));
       if (!admin) {
         // Create it if it doesn't exist
         const hashedPassword = await bcrypt.hash("admin123", 10);
         [admin] = await db.insert(usersTable).values({
           name: "Admin User",
-          email: "admin@school.edu",
+          email: "admin@zdspgc.edu",
           password: hashedPassword,
           role: "admin",
         }).returning();
