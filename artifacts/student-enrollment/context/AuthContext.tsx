@@ -9,10 +9,18 @@ import Constants from "expo-constants";
 // In development, resolve the local IP address dynamically via Expo Constants
 // so physical devices and emulators can successfully reach the API server.
 let API_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:5000";
-if (!process.env.EXPO_PUBLIC_API_URL && Constants?.expoConfig?.hostUri) {
-  const host = Constants.expoConfig.hostUri.split(':')[0];
-  API_URL = `http://${host}:5000`;
+
+// Handle local development fallbacks
+if (!process.env.EXPO_PUBLIC_API_URL) {
+  if (Constants?.expoConfig?.hostUri) {
+    const host = Constants.expoConfig.hostUri.split(':')[0];
+    API_URL = `http://${host}:5000`;
+  } else if (require('react-native').Platform.OS === 'android') {
+    // Android emulator fallback to host machine
+    API_URL = "http://10.0.2.2:5000";
+  }
 }
+
 setBaseUrl(API_URL);
 
 setAuthTokenGetter(async () => {
@@ -91,7 +99,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         showToast("Missing user info - see alert", "error");
       }
     } catch (e: any) {
-      showToast(e.message || "Failed to sign in", "error");
+      const errorMsg = e.message || "Failed to sign in";
+      showToast(`${errorMsg} (URL: ${API_URL})`, "error");
       throw e;
     }
   }, [showToast]);
